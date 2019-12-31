@@ -27,7 +27,7 @@ jobs:
       - run:
           name: 展開テスト
           command: |
-            result=$(circleci config process .circleci/config.yml | yq '.jobs."hello-world/echo_job".steps[0].run.command')
+            result=$(circleci config process .circleci/test.yml | yq '.jobs."hello-world/echo-job".steps[0].run.command')
             echo ${result} | grep "Hello, CircleCI"
 
   execution:
@@ -37,10 +37,10 @@ jobs:
         - checkout
         - run:
             name: 展開
-            command: circleci config process .circleci/config.yml > .circleci/2.0.yml
+            command: circleci config process .circleci/test.yml > .circleci/2.0.yml
         - run:
             name: ランタイムテスト
-            command: circleci local execute --config .circleci/2.0.yml --job hello-world/echo_job | tee local_build_output.txt /dev/stderr | tail -n 1 | grep "Success"
+            command: circleci local execute --config .circleci/2.0.yml --job hello-world/echo-job | tee local_build_output.txt /dev/stderr | tail -n 1 | grep "Success"
 
 workflows:
   main:
