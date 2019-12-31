@@ -1,0 +1,50 @@
+version: 2.1
+
+orbs:
+  cli: circleci/circleci-cli@0.1.5
+
+jobs:
+  validation:
+    executor: cli/default
+    steps:
+      - cli/install
+      - checkout
+      - run:
+          name: バリデーション
+          command: circleci orb validate ./src/orb.yml
+
+  expantion:
+    executor: cli/default
+    steps:
+      - cli/install
+      - checkout
+      - run:
+          name: Install yq
+          command: |
+            sudo apt update && \
+            sudo apt-get install jq python-pip python-dev && \
+            sudo pip install yq
+      - run:
+          name: 展開テスト
+          command: |
+            result=$(circleci config process .circleci/test.yml | yq '.jobs."hello-world/echo_job".steps[0].run.command')
+            echo ${result} | grep "Hello, CircleCI"
+
+  execution:
+      machine: true
+      steps:
+        - cli/install
+        - checkout
+        - run:
+            name: 展開
+            command: circleci config process .circleci/test.yml > .circleci/2.0.yml
+        - run:
+            name: ランタイムテスト
+            command: circleci local execute --config .circleci/2.0.yml --job hello-world/echo_job | tee local_build_output.txt /dev/stderr | tail -n 1 | grep "Success"
+
+workflows:
+  main:
+    jobs:
+      - validation
+      - expantion
+      - execution
