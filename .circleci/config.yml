@@ -49,7 +49,7 @@ jobs:
       - checkout
       - run:
           name: dev:alphaを公開
-          command: circleci orb publish src/orb.yml sample-orbs/hello-world@dev:alpha
+          command: circleci orb publish src/orb.yml sample-orbs/hello-world@dev:alpha --token ${CIRCLE_TOKEN}
 
   dev-promote-prod:
     parameters:
@@ -64,7 +64,7 @@ jobs:
       - checkout
       - run:
           name: dev:alphaを本番用Orbsへプロモートする
-          command: circleci orb promote src/orb.yml sample-orbs/hello-world@dev:alpha << parameters.release >>
+          command: circleci orb promote src/orb.yml sample-orbs/hello-world@dev:alpha << parameters.release >> --token ${CIRCLE_TOKEN}
 
 workflows:
   main:
