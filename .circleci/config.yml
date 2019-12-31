@@ -13,7 +13,7 @@ jobs:
           name: バリデーション
           command: circleci orb validate ./src/orb.yml
 
-  expantion:
+  expansion:
     executor: cli/default
     steps:
       - cli/install
@@ -81,7 +81,7 @@ workflows:
               only: /.*/
             tags:
               only: /.*/
-      - expantion:
+      - expansion:
           requires: [publish-dev]
           filters:
             branches:
@@ -96,7 +96,7 @@ workflows:
             tags:
               only: /.*/
       - dev-promote-prod:
-          requires: [validation, expantion, execution]
+          requires: [validation, expansion, execution]
           filters:
             branches:
               ignore: /.*/
@@ -104,7 +104,7 @@ workflows:
               only: /patch.*/
           release: patch
       - dev-promote-prod:
-          requires: [validation, expantion, execution]
+          requires: [validation, expansion, execution]
           filters:
             branches:
               ignore: /.*/
@@ -112,7 +112,7 @@ workflows:
               only: /minor.*/
           release: minor
       - dev-promote-prod:
-          requires: [validation, expantion, execution]
+          requires: [validation, expansion, execution]
           filters:
             branches:
               ignore: /.*/
