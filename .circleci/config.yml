@@ -42,9 +42,60 @@ jobs:
             name: ランタイムテスト
             command: circleci local execute --config .circleci/2.0.yml --job hello-world/echo-job | tee local_build_output.txt /dev/stderr | tail -n 1 | grep "Success"
 
+  publish-dev:
+    executor: cli/default
+    steps:
+      - cli/install
+      - checkout
+      - run:
+          name: dev:alphaを公開
+          command: circleci orb publish src/orb.yml sample-orbs/hello-world@dev:alpha
+
+  dev-promote-prod:
+    parameters:
+      release:
+        type: enum
+        enum: [patch, minor, major]
+        default: patch
+        description: circleci orb publish promoteコマンドの引数
+    executor: cli/default
+    steps:
+      - cli/install
+      - checkout
+      - run:
+          name: dev:alphaを本番用Orbsへプロモートする
+          command: circleci orb promote src/orb.yml sample-orbs/hello-world@dev:alpha << parameters.release >>
+
 workflows:
   main:
     jobs:
       - validation
-      - expantion
-      - execution
+      - publish-dev
+      - expantion:
+          requires: [publish-dev]
+      - execution:
+          requires: [publish-dev]
+      - dev-promote-prod:
+          requires: [validation, expantion, execution]
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /patch.*/
+          release: patch
+      - dev-promote-prod:
+          requires: [validation, expantion, execution]
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /minor.*/
+          release: minor
+      - dev-promote-prod:
+          requires: [validation, expantion, execution]
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /major.*/
+          release: major
