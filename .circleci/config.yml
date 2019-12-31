@@ -69,12 +69,32 @@ jobs:
 workflows:
   main:
     jobs:
-      - validation
-      - publish-dev
+      - validation:
+          filters:
+            branches:
+              only: /.*/
+            tags:
+              only: /.*/
+      - publish-dev:
+          filters:
+            branches:
+              only: /.*/
+            tags:
+              only: /.*/
       - expantion:
           requires: [publish-dev]
+          filters:
+            branches:
+              only: /.*/
+            tags:
+              only: /.*/
       - execution:
           requires: [publish-dev]
+          filters:
+            branches:
+              only: /.*/
+            tags:
+              only: /.*/
       - dev-promote-prod:
           requires: [validation, expantion, execution]
           filters:
