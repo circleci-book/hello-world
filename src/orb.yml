@@ -8,7 +8,7 @@ executors:
       - image: busybox
 
 jobs:
-  echo_job:
+  echo-job:
     description: "echoジョブ"
     parameters:
       to:
@@ -16,11 +16,11 @@ jobs:
         default: "World"
     executor: default
     steps:
-      - echo_command:
+      - echo-command:
           to: << parameters.to >>
 
 commands:
-  echo_command:
+  echo-command:
     description: "echoコマンド"
     parameters:
       to:
