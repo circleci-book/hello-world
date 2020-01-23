@@ -1,3 +1,9 @@
+default_filters: &default_filters
+  branches:
+    only: /.*/
+  tags:
+    only: /.*/
+
 version: 2.1
 
 orbs:
@@ -71,30 +77,18 @@ workflows:
     jobs:
       - validation:
           filters:
-            branches:
-              only: /.*/
-            tags:
-              only: /.*/
+            *default_filters
       - publish-dev:
           filters:
-            branches:
-              only: /.*/
-            tags:
-              only: /.*/
+            *default_filters
       - expansion:
           requires: [publish-dev]
           filters:
-            branches:
-              only: /.*/
-            tags:
-              only: /.*/
+            *default_filters
       - execution:
           requires: [publish-dev]
           filters:
-            branches:
-              only: /.*/
-            tags:
-              only: /.*/
+            *default_filters
       - dev-promote-prod:
           requires: [validation, expansion, execution]
           filters:
