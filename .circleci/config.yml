@@ -23,7 +23,7 @@ jobs:
 
         - add_ssh_keys:
             fingerprints:
-              - "<フィンガープリント>"
+              - e0:a5:98:4d:35:e4:93:e1:27:10:8f:22:ab:94:62:86
 
         - run:
             name: 開発用Orbをパブリッシュ
@@ -32,7 +32,7 @@ jobs:
         - run:
             name: 直前にパブリッシュした開発用Orbを使って、別リポジトリのビルドを開始する
             command: |
-              git clone git@github.com:TEST_REPOSITORY_USER/${TEST_REPOSITORY}.git
+              git clone git@github.com:${TEST_REPOSITORY_USER}/${TEST_REPOSITORY}.git
               cd ${TEST_REPOSITORY}
               git checkout -b ${BRANCH}
               mkdir -p .circleci
@@ -54,7 +54,7 @@ jobs:
             name: ビルドが完了するまで問い合わせる
             command: |
               while true; do
-                curl "https://circleci.com/api/v1.1/project/github/TEST_REPOSITORY_USER/${TEST_REPOSITORY}/tree/${BRANCH}?circle-token=${CIRCLE_TOKEN}&limit=1&filter=completed" > build-result.json
+                curl "https://circleci.com/api/v1.1/project/github/${TEST_REPOSITORY_USER}/${TEST_REPOSITORY}/tree/${BRANCH}?circle-token=${CIRCLE_TOKEN}&limit=1&filter=completed" > build-result.json
 
                 STOP_TIME=$(cat build-result.json | jq -r '.[0].stop_time')
                 if [ "$STOP_TIME" != "null" ]; then
