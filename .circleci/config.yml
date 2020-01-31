@@ -37,16 +37,16 @@ jobs:
             echo ${result} | grep "Hello, CircleCI"
 
   execution:
-      machine: true
-      steps:
-        - cli/install
-        - checkout
-        - run:
-            name: 展開
-            command: circleci config process .circleci/test.yml > .circleci/2.0.yml
-        - run:
-            name: ランタイムテスト
-            command: circleci local execute --config .circleci/2.0.yml --job hello-world/echo-job | tee local_build_output.txt /dev/stderr | tail -n 1 | grep "Success"
+    machine: true
+    steps:
+      - cli/install
+      - checkout
+      - run:
+          name: 展開
+          command: circleci config process .circleci/test.yml > .circleci/2.0.yml
+      - run:
+          name: ランタイムテスト
+          command: circleci local execute --config .circleci/2.0.yml --job hello-world/echo-job | tee local_build_output.txt /dev/stderr | tail -n 1 | grep "Success"
 
   publish-dev:
     executor: cli/default
@@ -79,6 +79,7 @@ workflows:
           filters:
             *default_filters
       - publish-dev:
+          requires: [validation]
           filters:
             *default_filters
       - expansion:
