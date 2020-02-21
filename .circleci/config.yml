@@ -12,10 +12,10 @@ parameters:
 
 jobs:
   integration-tests:
-    executor: sample-orbs/default
+    executor: hello-world/default
     steps:
       - checkout
-      - sample-orbs/echo-command
+      - hello-world/echo-command
 
 version: 2.1
 workflows:
@@ -24,7 +24,7 @@ workflows:
       - integration-tests
       - orb-tools/dev-promote-prod-from-commit-subject:
           add-pr-comment: true
-          bot-user: sample-orbs
+          bot-user: uraway
           fail-if-semver-not-indicated: true
           publish-version-tag: true
           ssh-fingerprints: e0:a5:98:4d:35:e4:93:e1:27:10:8f:22:ab:94:62:86
