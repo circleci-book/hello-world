@@ -1,13 +1,16 @@
-default_filters: &default_filters
-  branches:
-    only: /.*/
-  tags:
-    only: /.*/
+orbs:
+  cli: circleci/circleci-cli@0.1.7
+  hello-world: sample-orbs/hello-world@<< pipeline.parameters.dev-orb-version >>
 
 version: 2.1
 
-orbs:
-  cli: circleci/circleci-cli@0.1.5
+parameters:
+  dev-orb-version:
+    default: 'dev:alpha'
+    type: string
+  run-integration-tests:
+    type: boolean
+    default: false
 
 jobs:
   validation:
@@ -18,44 +21,6 @@ jobs:
       - run:
           name: バリデーション
           command: circleci orb validate ./src/orb.yml
-
-  expansion:
-    executor: cli/default
-    steps:
-      - cli/install
-      - checkout
-      - run:
-          name: Install yq
-          command: |
-            sudo apt update && \
-            sudo apt-get install jq python-pip python-dev && \
-            sudo pip install yq
-      - run:
-          name: 展開テスト
-          command: |
-            result=$(circleci config process .circleci/test.yml | yq '.jobs."hello-world/echo-job".steps[0].run.command')
-            echo ${result} | grep "Hello, CircleCI"
-
-  execution:
-    machine: true
-    steps:
-      - cli/install
-      - checkout
-      - run:
-          name: 展開
-          command: circleci config process .circleci/test.yml > .circleci/2.0.yml
-      - run:
-          name: ランタイムテスト
-          command: circleci local execute --config .circleci/2.0.yml --job hello-world/echo-job | tee local_build_output.txt /dev/stderr | tail -n 1 | grep "Success"
-
-  publish-dev:
-    executor: cli/default
-    steps:
-      - cli/install
-      - checkout
-      - run:
-          name: dev:alphaを公開
-          command: circleci orb publish src/orb.yml sample-orbs/hello-world@dev:alpha --token ${CIRCLE_TOKEN}
 
   dev-promote-prod:
     parameters:
@@ -69,29 +34,56 @@ jobs:
       - cli/install
       - checkout
       - run:
-          name: dev:alphaを本番用Orbsへプロモートする
-          command: circleci orb publish promote sample-orbs/hello-world@dev:alpha << parameters.release >> --token ${CIRCLE_TOKEN}
+          name: dev:${CIRCLE_SHA1:0:7}を本番用Orbsへプロモートする
+          command: circleci orb publish promote sample-orbs/hello-world@dev:${CIRCLE_SHA1:0:7} << parameters.release >> --token ${CIRCLE_TOKEN}
+
+  integration-test-for-orb:
+    executor: hello-world/default
+    steps:
+      - hello-world/echo-command
+
+  publish-dev-orb:
+    executor: cli/default
+    steps:
+      - checkout
+      - run:
+          name: devバージョンを公開
+          command: |
+            circleci orb publish src/orb.yml sample-orbs/hello-world@dev:alpha --token ${CIRCLE_TOKEN}
+            circleci orb publish src/orb.yml sample-orbs/hello-world@dev:${CIRCLE_SHA1:0:7} --token ${CIRCLE_TOKEN}
+  trigger-integration-test-workflow:
+    executor: cli/default
+    steps:
+      - run:
+          name: integration-testワークフローをトリガーする
+          command: |
+            VCS_TYPE=$(echo ${CIRCLE_BUILD_URL} | cut -d '/' -f 4)
+
+            curl -u ${CIRCLE_TOKEN}: -X POST --header "Content-Type: application/json" -d "{
+              \"branch\": \"${CIRCLE_BRANCH}\",
+              \"parameters\": {\"run-integration-tests\": true, \"dev-orb-version\":\"dev:${CIRCLE_SHA1:0:7}\"}
+            }" "https://circleci.com/api/v2/project/${VCS_TYPE}/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}/pipeline"
 
 workflows:
-  main:
+  integration-test:
+    when: << pipeline.parameters.run-integration-tests >>
     jobs:
-      - validation:
-          filters:
-            *default_filters
-      - publish-dev:
-          requires: [validation]
-          filters:
-            *default_filters
-      - expansion:
-          requires: [publish-dev]
-          filters:
-            *default_filters
-      - execution:
-          requires: [publish-dev]
-          filters:
-            *default_filters
+      - integration-test-for-orb
+  publish-dev:
+    unless: << pipeline.parameters.run-integration-tests >>
+    jobs:
+      - validation
+      - publish-dev-orb:
+          requires:
+            - validation
+      - trigger-integration-test-workflow:
+          requires:
+            - publish-dev-orb
+  promote-orb:
+    unless: << pipeline.parameters.run-integration-tests >>
+    jobs:
       - dev-promote-prod:
-          requires: [validation, expansion, execution]
+          name: patch_promote
           filters:
             branches:
               ignore: /.*/
@@ -99,7 +91,7 @@ workflows:
               only: /patch.*/
           release: patch
       - dev-promote-prod:
-          requires: [validation, expansion, execution]
+          name: minor_promote
           filters:
             branches:
               ignore: /.*/
@@ -107,7 +99,7 @@ workflows:
               only: /minor.*/
           release: minor
       - dev-promote-prod:
-          requires: [validation, expansion, execution]
+          name: major_promote
           filters:
             branches:
               ignore: /.*/
