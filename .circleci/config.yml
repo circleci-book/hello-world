@@ -13,6 +13,30 @@ parameters:
     default: false
 
 jobs:
+  validation:
+    executor: cli/default
+    steps:
+      - cli/install
+      - checkout
+      - run:
+          name: バリデーション
+          command: circleci orb validate ./src/orb.yml
+
+  dev-promote-prod:
+    parameters:
+      release:
+        type: enum
+        enum: [patch, minor, major]
+        default: patch
+        description: circleci orb publish promoteコマンドの引数
+    executor: cli/default
+    steps:
+      - cli/install
+      - checkout
+      - run:
+          name: dev:${CIRCLE_SHA1:0:7}を本番用Orbsへプロモートする
+          command: circleci orb publish promote sample-orbs/hello-world@dev:${CIRCLE_SHA1:0:7} << parameters.release >> --token ${CIRCLE_TOKEN}
+
   integration-test-for-orb:
     executor: hello-world/default
     steps:
@@ -48,7 +72,37 @@ workflows:
   publish-dev:
     unless: << pipeline.parameters.run-integration-tests >>
     jobs:
-      - publish-dev-orb
+      - validation
+      - publish-dev-orb:
+          requires:
+            - validation
       - trigger-integration-test-workflow:
           requires:
             - publish-dev-orb
+  promote-orb:
+    unless: << pipeline.parameters.run-integration-tests >>
+    jobs:
+      - dev-promote-prod:
+          name: patch_promote
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /patch.*/
+          release: patch
+      - dev-promote-prod:
+          name: minor_promote
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /minor.*/
+          release: minor
+      - dev-promote-prod:
+          name: major_promote
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /major.*/
+          release: major
