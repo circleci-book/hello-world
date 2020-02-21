@@ -27,7 +27,7 @@ workflows:
           bot-user: uraway
           fail-if-semver-not-indicated: true
           publish-version-tag: true
-          ssh-fingerprints: e0:a5:98:4d:35:e4:93:e1:27:10:8f:22:ab:94:62:86
+          ssh-fingerprints: 1c:8c:e4:85:91:ad:0e:ee:84:fd:da:e8:1d:56:7c:e6
           orb-name: sample-orbs/hello-world
           requires:
             - integration-tests
