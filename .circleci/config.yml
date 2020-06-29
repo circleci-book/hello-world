@@ -20,13 +20,14 @@ jobs:
 version: 2.1
 workflows:
   integration-tests_prod-release: # インテグレーションテストとOrbをプロモートするワークフロー
-    when: << pipeline.parameters.run-integration-tests >> # パイプラインパラメータrun-integration-testsがtrueであれば実行する
+    when: << pipeline.parameters.run-integration-tests >> # パイプラインパラメータrun-integration-testsがtrueであれば実行しない
     jobs:
       - integration-tests
       - orb-tools/dev-promote-prod-from-commit-subject:
-          add-pr-comment: true
-          bot-user: uraway
           fail-if-semver-not-indicated: true
+          add-pr-comment: true
+          bot-user: <botユーザー>
+          bot-token-variable: PR_COMMENTER_GITHUB_TOKEN
           publish-version-tag: true
           ssh-fingerprints: 1c:8c:e4:85:91:ad:0e:ee:84:fd:da:e8:1d:56:7c:e6
           orb-name: sample-orbs/hello-world
@@ -36,9 +37,9 @@ workflows:
             branches:
               only: master
   lint_pack-validate_publish-dev:
-    unless: << pipeline.parameters.run-integration-tests >>  # パイプラインパラメータrun-integration-testsがtrueであれば実行する
+    unless: << pipeline.parameters.run-integration-tests >> # パイプラインパラメータrun-integration-testsがfalseであれば実行しない
     jobs:
-      - orb-tools/lint # Orbのリントジョブ
+      - orb-tools/lint # Orbの静的解析
       - orb-tools/pack:
           requires:
             - orb-tools/lint
@@ -46,7 +47,7 @@ workflows:
           orb-name: sample-orbs/hello-world
           requires:
             - orb-tools/pack
-      - orb-tools/trigger-integration-tests-workflow: # integration-tests_prod-releaseワークフローをトリガーするためのジョブ
+      - orb-tools/trigger-integration-tests-workflow: # integration-tests_prod-releaseワークフローをトリガするためのジョブ
           name: trigger-integration-dev
           requires:
             - orb-tools/publish-dev
