@@ -1,5 +1,5 @@
 orbs:
-  orb-tools: circleci/orb-tools@9.1.0
+  orb-tools: circleci/orb-tools@9.3.1
   hello-world: sample-orbs/hello-world@<<pipeline.parameters.dev-orb-version>>
 
 parameters: # パイプラインパラメータ
