@@ -2,4 +2,4 @@
 
 [![CircleCI](https://circleci.com/gh/circleci-book/hello-world.svg?style=svg)](https://circleci.com/gh/circleci-book/hello-world)
 
-<CircleCIではじめるCI/CD入門>の10章「Orbの公開」におけるサンプルコードです。
+[CircleCI実践入門](https://gihyo.jp/book/2020/978-4-297-11411-4)の10章「Orbsの公開」におけるサンプルコードです。
